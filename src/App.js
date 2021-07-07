@@ -1,24 +1,78 @@
-import logo from './logo.svg';
-import './App.css';
-
+import { Route, Switch } from "react-router-dom";
+import Palette from "./Palette";
+import PaletteList from "./PaletteList";
+import SingleColorPalette from "./SingleColorPalette";
+import NewPaletteForm from "./NewPaletteForm";
+import { generatePalette } from "./colorHelper";
+import seedColors from "./seedColors";
+import { useEffect, useState } from "react";
 function App() {
+  const savePalettes = JSON.parse(window.localStorage.getItem("palettes"));
+  const [palettes, setpalettes] = useState(savePalettes || seedColors);
+  function findPalette(id) {
+    return palettes.find((palette) => {
+      return palette.id === id;
+    });
+  }
+  function deletePalette(id) {
+    setpalettes((st) => st.filter((palette) => palette.id !== id));
+  }
+  function savePalette(newPalette) {
+    setpalettes((oldPalette) => [...oldPalette, newPalette]);
+  }
+  useEffect(() => {
+    function syncLocalStorage() {
+      window.localStorage.setItem("palettes", JSON.stringify(palettes));
+    }
+    syncLocalStorage();
+  }, [palettes]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Switch>
+      <Route
+        exact
+        path="/palette/new"
+        render={(routeProps) => (
+          <NewPaletteForm
+            savePalette={savePalette}
+            palettes={palettes}
+            {...routeProps}
+          />
+        )}
+      />
+      <Route
+        exact
+        path="/palette/:paletteId/:colorId"
+        render={(routeProps) => (
+          <SingleColorPalette
+            colorId={routeProps.match.params.colorId}
+            palette={generatePalette(
+              findPalette(routeProps.match.params.paletteId)
+            )}
+          />
+        )}
+      />
+      <Route
+        exact
+        path="/"
+        render={(routeProps) => (
+          <PaletteList
+            palettes={palettes}
+            deletePalette={deletePalette}
+            {...routeProps}
+          />
+        )}
+      />
+      <Route
+        exact
+        path="/palette/:id"
+        render={(routeProps) => (
+          <Palette
+            palette={generatePalette(findPalette(routeProps.match.params.id))}
+          />
+        )}
+      />
+    </Switch>
   );
 }
 
